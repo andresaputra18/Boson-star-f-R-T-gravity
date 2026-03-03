@@ -188,3 +188,7 @@ This project is licensed under the **GNU General Public License v3.0**.
 If you use this solver in academic work, please cite the associated paper describing the model and equations.
 
 > NOTE: The manuscript is currently under review. An arXiv link and the final publisher DOI/link will be added here once available.
+
+## Paper data (CSV)
+
+All datasets used to generate the plots in the associated paper are included in this repository under `data/`. Each CSV is named by figure/panel (e.g., `fig01.csv`).
