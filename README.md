@@ -4,16 +4,16 @@ A Python solver for **static, spherically symmetric boson stars**, formulated as
 
 You choose a **central scalar amplitude** `phi0`, and the solver returns self-consistent radial profiles for:
 
-- scalar field amplitude **$\phi(r)$** and **$\psi(r) = \frac{d\phi}{dr}$**
-- metric functions **$A(r)$** and **$B(r)$** (spherical metric ansatz)
-- the eigenfrequency **$\omega$** (found as part of the BVP)
+- scalar field amplitude **$\tilde{\phi}(\tilde{r})$** and **$\tilde{\psi}(\tilde{r}) = \frac{d\tilde{\phi}}{d\tilde{r}}$**
+- metric functions **$A(\tilde{r})$** and **$B(\tilde{r})$** (spherical metric ansatz)
+- the eigenfrequency **$\tilde{\omega}$** (found as part of the BVP)
 
 ## What the numerics are doing
 
 - Unknown vector:
-  $y(r) = [\phi(r),\ \psi(r),\ A(r),\ B(r)]$
+  $y(\tilde{r}) = [\tilde{\phi}(\tilde{r}),\ \tilde{\psi}(\tilde{r}),\ A(\tilde{r}),\ B(\tilde{r})]$
 - This is an eigenvalue-type BVP: **4 ODEs** plus **1 free parameter**.
-- Internally the solver uses a parameter **$\sigma$** and maps it smoothly to **$\omega$** so that $$0 < \omega < \sqrt{\eta m^2}$$ throughout iterations (helps stability and avoids hard clamping).
+- Internally the solver uses a parameter **$\sigma$** and maps it smoothly to **$\tilde{\omega}$** so that $$0 < \tilde{\omega} < \sqrt{\eta}$$ throughout iterations (helps stability and avoids hard clamping).
 - Outer boundary uses a Robin condition consistent with a Yukawa tail.
 
 ---
@@ -114,9 +114,9 @@ plt.show()
 - `tol`: tolerance passed to `solve_bvp`
 
 **Physics knobs:**
-- `m2`: mass term parameter $m^2$
-- `lam`: self-interaction strength $\lambda$
-- `zeta`: $f(R,T)$ parameter $\zeta$
+- `m2`: mass term parameter $m^2$ (default is 1 since other quantities are rescaled to $m$)
+- `lam`: self-interaction strength $\tilde{\lambda}$
+- `zeta`: rescaled $f(R,T)$ parameter $\zeta = \frac{\alpha}{\kappa}$
 
 **Warm-start knobs (useful for parameter scans):**
 - `y_guess`: tuple `(r, phi, psi, A, B)` from a previous successful run
@@ -136,12 +136,12 @@ If `sol["success"] == True`, the dictionary commonly contains:
 | `phi`, `psi` | scalar field and derivative |
 | `A`, `B` | metric functions |
 | `omega` | eigenfrequency $\omega$ |
-| `mu` | tail scale $\mu=\sqrt{\eta m^2-\omega^2}$ |
-| `m_of_r` | Misner-Sharp mass profile used in the code |
-| `M` | total mass |
+| `mu` | tail scale $\mu=\sqrt{\eta - \tilde{\omega}^2}$ |
+| `m_of_r` | Misner-Sharp mass profile $\tilde{M}_{\rm MS}$ used in the code |
+| `M` | total mass $\tilde{M}$ |
 | `Q` | Noether charge |
-| `R_eff` | radius where $m(R_\mathrm{eff}) = f M$ (default $f=0.99$ to get $R_{99}$) |
-| `C_eff` | effective compactness $M/R_\mathrm{eff}$ |
+| `R_eff` | radius where enclosed Misner–Sharp mass at R_eff equals $f\tilde{M}$ (default f = 0.99 → $\tilde{R}_{99}$) |
+| `C_eff` | effective compactness $\tilde{M}/\tilde{R}_{\rm eff}$ |
 | `p_sigma` | internal σ parameter used to map to $\omega$ |
 | `phi0, m2, lam, zeta, R` | echoed inputs |
 
@@ -189,6 +189,61 @@ If you use this solver in academic work, please cite the associated paper descri
 
 > NOTE: The manuscript is currently under review. An arXiv link and the final publisher DOI/link will be added here once available.
 
+---
+
 ## Paper data (CSV)
 
-All datasets used to generate the plots in the associated paper are included in this repository under `data/`. Each CSV is named by figure/panel (e.g., `fig01.csv`).
+All datasets used to generate the plots in the associated paper are stored in `data/` as CSV files.  
+Each file is named using the pattern:
+
+`FIG[number]_[type]_zeta_[zetanumber]_lambda_[lambdanumber].csv`
+
+### Fields
+
+- **`number`**: figure/plot index from **1** to **18** (e.g., `FIG1`, `FIG18`).
+- **`type`**: dataset category
+  - **`bs`** — parameter sweep outputs: $M$, $Q$, $C$, $\phi_0$, $\omega$, $R_{99}$
+  - **`tov`** — TOV force analysis outputs
+  - **`ec`** — energy condition tests (margins listed below)
+
+### Energy condition margins (`ec`)
+
+When `type = ec`, the CSV includes the following energy-condition margin columns:
+
+- **`ec1`**: $\rho_{\mathrm{eff}}$
+- **`ec2`**: $\rho_{\mathrm{eff}} - p_{r,\mathrm{eff}}$
+- **`ec3`**: $\rho_{\mathrm{eff}} - p_{t,\mathrm{eff}}$
+- **`ec4`**: $\rho_{\mathrm{eff}} + p_{r,\mathrm{eff}}$
+- **`ec5`**: $\rho_{\mathrm{eff}} + p_{t,\mathrm{eff}}$
+- **`ec6`**: $\rho_{\mathrm{eff}} + p_{r,\mathrm{eff}} + 2p_{t,\mathrm{eff}}$
+
+### Encoding of $\zeta$
+
+`zetanumber` is a **4-digit code** representing $\zeta$:
+
+- `0200` $\rightarrow \zeta = 0.200$
+- for negative values, prefix with `m`:
+  - `m0200` $\rightarrow \zeta = -0.200$
+
+### Encoding of $\tilde{\lambda}$
+
+`lambdanumber` is a **7-digit code** representing $\tilde{\lambda}$, with the numeric value given by:
+
+$$
+\tilde{\lambda} = \frac{\texttt{lambdanumber}}{10^5}.
+$$
+
+Examples:
+
+- `1000000` $\rightarrow \tilde{\lambda} = 10.000$
+- `0687500` $\rightarrow \tilde{\lambda} = 6.875$
+- for negative values, prefix with `m`:
+  - `m0687500` $\rightarrow \tilde{\lambda} = -6.875$
+
+### Examples
+
+- `FIG3_bs_zeta_0200_lambda_0687500.csv`  
+  $\rightarrow$ `FIG3`, `bs`, $\zeta = 0.200$, $\tilde{\lambda} = 6.875$
+
+- `FIG12_ec_zeta_m0200_lambda_1000000.csv`  
+  $\rightarrow$ `FIG12`, `ec`, $\zeta = -0.200$, $\tilde{\lambda} = 10.000$
